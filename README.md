@@ -111,7 +111,7 @@ El sistema reconstruye el estado consistente examinando el journal.
 ### 4. Checkpoints Periódicos  
 Limitan el tamaño del journal y aceleran la recuperación.
 
-## 🛠️ Requisitos del Sistema
+## Requisitos del Sistema
 
 - **Python**: 3.8 o superior
 - **Memoria**: 50 MB mínimo
