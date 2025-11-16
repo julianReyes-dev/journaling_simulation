@@ -31,8 +31,9 @@ class CrashSimulator:
             try:
                 if op_type == "create":
                     filename = f"test_file_{i}.dat"
-                    file_size = random.randint(100, 5000)  # Tamaño aleatorio
-                    file_data = f"Datos de prueba para archivo {i} ".encode() * (file_size // 50)
+                    # Archivos más grandes para usar más bloques
+                    file_size = random.randint(2000, 8000)  # Aumentamos el tamaño
+                    file_data = f"Datos de prueba para archivo {i} ".encode() * (file_size // 30)
                     success = self.fs.create_file(filename, file_data)
                     
                     if success:
@@ -44,7 +45,8 @@ class CrashSimulator:
                 # Simular posible fallo del sistema
                 if random.random() < crash_probability:
                     print(f"\nFALLO DEL SISTEMA SIMULADO en operación {i+1}")
-                    self.simulate_crash()
+                    # Menos corrupción para mejor demostración
+                    self.simulate_crash(corruption_level=0.05)  # Solo 5% de corrupción
                     break
                     
                 # Pequeña pausa entre operaciones para mejor visualización
@@ -57,12 +59,13 @@ class CrashSimulator:
         print(f"\nSimulación completada: {successful_operations}/{operations} operaciones exitosas")
         return successful_operations
     
-    def simulate_crash(self, corruption_level: float = 0.2):
+    def simulate_crash(self, corruption_level: float = 0.05):  # Reducido de 0.2 a 0.05
         """
         Simula un fallo del sistema corruptiendo algunos bloques
         """
         total_blocks = self.disk.total_blocks
-        blocks_to_corrupt = max(1, int(total_blocks * corruption_level))
+        # Aseguramos que al menos corrompamos algunos bloques, pero no demasiados
+        blocks_to_corrupt = max(1, min(10, int(total_blocks * corruption_level)))  # Máximo 10 bloques
         
         print(f"Corrompiendo {blocks_to_corrupt} bloques de {total_blocks}...")
         
@@ -71,12 +74,18 @@ class CrashSimulator:
                       if status.name == "USED"]
         
         if used_blocks:
+            # No corromper más bloques de los que tenemos usados
             corrupted_blocks = random.sample(used_blocks, min(blocks_to_corrupt, len(used_blocks)))
             
             for block_num in corrupted_blocks:
                 self.disk.mark_corrupted(block_num)
                 
             print(f"Fallo simulado: {len(corrupted_blocks)} bloques de datos corruptos")
+            
+            # Información útil para debugging
+            total_used = len(used_blocks)
+            corruption_percentage = (len(corrupted_blocks) / total_used * 100) if total_used > 0 else 0
+            print(f"Estadísticas: {corruption_percentage:.1f}% de bloques usados afectados")
         else:
             print("No hay bloques usados para corromper")
     
@@ -88,12 +97,12 @@ class CrashSimulator:
         
         # Fase 1: Iniciar operación crítica
         transaction_id = self.fs.begin_transaction()
-        test_data = b"Critical operation data that might be interrupted by system crash"
+        # Archivo más grande para usar múltiples bloques
+        test_data = b"Critical operation data that might be interrupted by system crash " * 50
         
-        # CORREGIDO: Usar JournalEntryType directamente en lugar de self.fs.JournalEntryType
         if self.fs.journal_enabled:
             self.fs.journal_operation(
-                JournalEntryType.FILE_CREATE,  # ← CORREGIDO
+                JournalEntryType.FILE_CREATE,
                 {
                     "filename": filename,
                     "size": len(test_data),
@@ -105,7 +114,8 @@ class CrashSimulator:
         
         # Simular fallo justo después del journaling pero antes de completar la operación
         print("FALLO CONTROLADO: Sistema interrumpido durante ejecución")
-        self.simulate_crash(corruption_level=0.15)
+        # Muy poca corrupción para el demo controlado
+        self.simulate_crash(corruption_level=0.02)  # Solo 2% de corrupción
         
         print("Operación interrumpida - lista para recuperación")
         return transaction_id
@@ -114,10 +124,13 @@ class CrashSimulator:
         """Estadísticas de los fallos simulados"""
         total_blocks = self.disk.total_blocks
         corrupted_blocks = sum(1 for s in self.disk.block_status if s.name == "CORRUPTED")
+        used_blocks = sum(1 for s in self.disk.block_status if s.name == "USED")
         
         return {
             "total_blocks": total_blocks,
+            "used_blocks": used_blocks,
             "corrupted_blocks": corrupted_blocks,
-            "corruption_rate": (corrupted_blocks / total_blocks * 100) if total_blocks > 0 else 0,
+            "corruption_rate_total": (corrupted_blocks / total_blocks * 100) if total_blocks > 0 else 0,
+            "corruption_rate_used": (corrupted_blocks / used_blocks * 100) if used_blocks > 0 else 0,
             "crash_points_recorded": len(self.crash_points)
         }
