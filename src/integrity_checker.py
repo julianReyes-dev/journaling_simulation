@@ -13,7 +13,7 @@ class IntegrityChecker:
         """
         Realiza una verificación completa de integridad
         """
-        print("🔍 Iniciando verificación completa de integridad...")
+        print("Iniciando verificación completa de integridad...")
         
         results = {
             "total_blocks": self.disk.total_blocks,
