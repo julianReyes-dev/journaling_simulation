@@ -1,8 +1,9 @@
-import random
+import json
 import time
-from typing import Dict, List
+import random
+from typing import List, Dict, Any
 from .virtual_disk import VirtualDisk
-from .journaling_fs import JournalingFileSystem
+from .journaling_fs import JournalingFileSystem, JournalEntryType
 
 class CrashSimulator:
     """
@@ -53,7 +54,7 @@ class CrashSimulator:
                 print(f"Error crítico en operación {i+1}: {e}")
                 break
         
-        print(f"\n📈 Simulación completada: {successful_operations}/{operations} operaciones exitosas")
+        print(f"\nSimulación completada: {successful_operations}/{operations} operaciones exitosas")
         return successful_operations
     
     def simulate_crash(self, corruption_level: float = 0.2):
@@ -89,10 +90,10 @@ class CrashSimulator:
         transaction_id = self.fs.begin_transaction()
         test_data = b"Critical operation data that might be interrupted by system crash"
         
-        # Registrar en journal (Fase de journaling completada)
+        # CORREGIDO: Usar JournalEntryType directamente en lugar de self.fs.JournalEntryType
         if self.fs.journal_enabled:
             self.fs.journal_operation(
-                self.fs.JournalEntryType.FILE_CREATE,
+                JournalEntryType.FILE_CREATE,  # ← CORREGIDO
                 {
                     "filename": filename,
                     "size": len(test_data),
@@ -100,13 +101,13 @@ class CrashSimulator:
                     "transaction_id": transaction_id
                 }
             )
-            print("📝 Journal actualizado - operación registrada")
+            print("Journal actualizado - operación registrada")
         
         # Simular fallo justo después del journaling pero antes de completar la operación
         print("FALLO CONTROLADO: Sistema interrumpido durante ejecución")
-        self.simulate_crash(correlation_level=0.15)
+        self.simulate_crash(corruption_level=0.15)
         
-        print("🔄 Operación interrumpida - lista para recuperación")
+        print("Operación interrumpida - lista para recuperación")
         return transaction_id
     
     def get_crash_statistics(self) -> Dict[str, any]:
