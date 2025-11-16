@@ -1,7 +1,8 @@
+import hashlib
 import json
 import time
 from enum import Enum
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from .virtual_disk import VirtualDisk, Inode
 

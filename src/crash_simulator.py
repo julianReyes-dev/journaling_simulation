@@ -1,6 +1,6 @@
 import random
 import time
-from typing import List
+from typing import Dict, List
 from .virtual_disk import VirtualDisk
 from .journaling_fs import JournalingFileSystem
 
