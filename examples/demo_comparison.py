@@ -23,9 +23,9 @@ def run_comparison():
     print("COMPARACIÓN: Sistemas de Archivos con vs sin Journaling")
     print("=" * 70)
     
-    # Configuración
-    operations = 15
-    crash_probability = 0.25
+    # Configuración - menos operaciones para demo más rápida y clara
+    operations = 10
+    crash_probability = 0.3  # Mayor probabilidad para ver más fallos
     
     # Caso 1: Sin journaling
     print("\n" + "CASO 1: SISTEMA SIN JOURNALING" + "\n" + "-" * 50)
@@ -51,6 +51,9 @@ def run_comparison():
     print(f"   • Bloques corruptos: {final_state_no_journal['corrupted_blocks']}")
     print(f"   • Operaciones recuperadas: {recovery_no_journal['recovered']}")
     
+    # Mostrar reporte detallado
+    checker_no_journal.print_detailed_report(final_state_no_journal)
+    
     # Caso 2: Con journaling
     print("\n" + "CASO 2: SISTEMA CON JOURNALING" + "\n" + "-" * 50)
     
@@ -75,6 +78,9 @@ def run_comparison():
     print(f"   • Bloques corruptos: {final_state_with_journal['corrupted_blocks']}")
     print(f"   • Operaciones recuperadas: {recovery_with_journal['recovered']}")
     print(f"   • Entradas en journal: {len(fs_with_journal.journal)}")
+    
+    # Mostrar reporte detallado
+    checker_with_journal.print_detailed_report(final_state_with_journal)
     
     # Comparación final
     print("\n" + "COMPARACIÓN FINAL" + "\n" + "=" * 50)
@@ -109,12 +115,16 @@ def run_comparison():
     
     # Conclusión
     print("\n" + "CONCLUSIÓN" + "\n" + "=" * 50)
-    if improvement > 0:
+    if improvement > 10:
         print("El journaling demostró una mejora significativa en la")
         print("   recuperación de datos después de fallos del sistema.")
+    elif improvement > 0:
+        print("El journaling mostró una mejora moderada en la")
+        print("   recuperación de datos.")
     else:
         print("En esta ejecución, los resultados fueron similares.")
         print("   Ejecuta nuevamente para ver la mejora típica.")
+        print("   (La aleatoriedad puede afectar los resultados)")
     
     return {
         "without_journaling": {
@@ -144,19 +154,32 @@ def run_controlled_crash_demo():
         data = f"Archivo inicial {i}".encode() * 50
         fs.create_file(f"init_{i}.txt", data)
     
+    # Verificar estado inicial
+    print("\nESTADO INICIAL:")
+    initial_check = checker.comprehensive_integrity_check()
+    print(f"   • Archivos creados: {initial_check['inodes_checked']}")
+    print(f"   • Todos intactos: {initial_check['inodes_integrity_ok'] == initial_check['inodes_checked']}")
+    
     # Simular fallo controlado durante operación crítica
+    print("\nSimulando fallo durante operación crítica...")
     transaction_id = crash_sim.controlled_crash_during_operation("archivo_critico.dat")
     
     print("\nPROCESO DE RECUPERACIÓN:")
     recovery_stats = fs.recover_from_journal()
     integrity_after = checker.comprehensive_integrity_check()
     
-    print(f"Resultados recuperación:")
+    print(f"\nResultados recuperación:")
     print(f"   • Operaciones recuperadas: {recovery_stats['recovered']}")
     print(f"   • Errores: {recovery_stats['errors']}")
     print(f"   • Operaciones pendientes: {len(recovery_stats['pending_operations'])}")
     
     checker.print_detailed_report(integrity_after)
+    
+    # Mostrar qué archivos sobrevivieron
+    surviving_files = [f for f in integrity_after['recoverable_files']]
+    print(f"\nARCHIVOS QUE SOBREVIVIERON AL FALLO: {len(surviving_files)}")
+    for file_info in surviving_files:
+        print(f"   • Inodo {file_info['inode_id']}: {file_info['size']} bytes - {file_info['status']}")
 
 if __name__ == "__main__":
     print("Iniciando demostración de Journaling File System")
@@ -170,4 +193,5 @@ if __name__ == "__main__":
     run_controlled_crash_demo()
     
     print("\n" + "Demostración completada!")
-    print("   Ejecuta nuevamente para ver diferentes resultados (aleatorios)")
+    print("Tipsito :D : Ejecuta nuevamente para ver diferentes resultados")
+    print("   (la aleatoriedad en los fallos produce variaciones)")
