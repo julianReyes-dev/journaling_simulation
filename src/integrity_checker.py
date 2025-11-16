@@ -13,7 +13,7 @@ class IntegrityChecker:
         """
         Realiza una verificación completa de integridad
         """
-        print("Iniciando verificación completa de integridad...")
+        print("🔍 Iniciando verificación completa de integridad...")
         
         results = {
             "total_blocks": self.disk.total_blocks,
@@ -45,11 +45,13 @@ class IntegrityChecker:
             results["inodes_checked"] += 1
             
             # Verificar si todos los bloques del inodo están accesibles
-            blocks_accessible = all(
-                0 <= block_num < self.disk.total_blocks and
-                self.disk.block_status[block_num] != BlockStatus.CORRUPTED
-                for block_num in inode.blocks
-            )
+            corrupted_blocks_in_inode = [
+                block_num for block_num in inode.blocks 
+                if (0 <= block_num < self.disk.total_blocks and
+                    self.disk.block_status[block_num] == BlockStatus.CORRUPTED)
+            ]
+            
+            blocks_accessible = len(corrupted_blocks_in_inode) == 0
             
             if blocks_accessible:
                 # Leer y verificar checksum
@@ -65,6 +67,7 @@ class IntegrityChecker:
                             "status": "INTEGRITY_OK",
                             "checksum_match": True
                         })
+                        print(f"   Inodo {inode_id}: Integridad VERIFICADA")
                     else:
                         results["inodes_integrity_failed"] += 1
                         results["corrupted_files"].append({
@@ -74,6 +77,7 @@ class IntegrityChecker:
                             "status": "CHECKSUM_MISMATCH",
                             "recoverable": False
                         })
+                        print(f"   Inodo {inode_id}: Checksum NO coincide")
                 else:
                     results["inodes_integrity_failed"] += 1
                     results["corrupted_files"].append({
@@ -81,20 +85,25 @@ class IntegrityChecker:
                         "status": "UNABLE_TO_READ",
                         "recoverable": False
                     })
+                    print(f"   Inodo {inode_id}: No se puede leer")
             else:
                 results["inodes_integrity_failed"] += 1
-                # Verificar cuántos bloques están corruptos
-                corrupted_blocks = [b for b in inode.blocks 
-                                  if self.disk.block_status[b] == BlockStatus.CORRUPTED]
+                # Verificar si es parcialmente recuperable
+                recoverable = len(corrupted_blocks_in_inode) < len(inode.blocks)
                 results["corrupted_files"].append({
                     "inode_id": inode_id,
                     "status": "CORRUPTED_BLOCKS",
-                    "corrupted_blocks_count": len(corrupted_blocks),
+                    "corrupted_blocks_count": len(corrupted_blocks_in_inode),
                     "total_blocks": len(inode.blocks),
-                    "recoverable": len(corrupted_blocks) < len(inode.blocks)  # Parcialmente recuperable
+                    "recoverable": recoverable
                 })
+                if recoverable:
+                    print(f"   Inodo {inode_id}: Parcialmente corrupto ({len(corrupted_blocks_in_inode)}/{len(inode.blocks)} bloques)")
+                else:
+                    print(f"   Inodo {inode_id}: Completamente corrupto")
         
-        print(f"Verificación completada: {results['inodes_integrity_ok']}/{results['inodes_checked']} archivos intactos")
+        recovery_rate = (results['inodes_integrity_ok'] / results['inodes_checked'] * 100) if results['inodes_checked'] > 0 else 0
+        print(f"Verificación completada: {results['inodes_integrity_ok']}/{results['inodes_checked']} archivos intactos ({recovery_rate:.1f}%)")
         return results
     
     def _read_inode_data(self, inode: Inode) -> bytes:
@@ -102,11 +111,15 @@ class IntegrityChecker:
         try:
             data_blocks = []
             for block_num in inode.blocks:
-                block_data = self.disk.read_block(block_num)
-                if block_data:
-                    data_blocks.append(block_data)
+                if (0 <= block_num < self.disk.total_blocks and 
+                    self.disk.block_status[block_num] != BlockStatus.CORRUPTED):
+                    block_data = self.disk.read_block(block_num)
+                    if block_data:
+                        data_blocks.append(block_data)
+                    else:
+                        return None
                 else:
-                    return None
+                    return None  # Bloque corrupto o fuera de rango
             return b''.join(data_blocks)[:inode.size]
         except Exception as e:
             print(f"Error leyendo inodo {inode.id}: {e}")
@@ -141,7 +154,7 @@ class IntegrityChecker:
             print(f"   • {status}: {count} bloques ({percentage:.1f}%)")
         
         print(f"\nESTADO DE ARCHIVOS:")
-        print(f"   • Archivos verficados: {integrity_results['inodes_checked']}")
+        print(f"   • Archivos verificados: {integrity_results['inodes_checked']}")
         print(f"   • Archivos intactos: {integrity_results['inodes_integrity_ok']}")
         print(f"   • Archivos corruptos: {integrity_results['inodes_integrity_failed']}")
         
@@ -152,6 +165,7 @@ class IntegrityChecker:
         if integrity_results["corrupted_files"]:
             print(f"\nARCHIVOS CORRUPTOS:")
             for corrupted in integrity_results["corrupted_files"][:5]:  # Mostrar primeros 5
-                print(f"   • Inodo {corrupted['inode_id']}: {corrupted['status']}")
+                recoverable_msg = " (parcialmente recuperable)" if corrupted.get('recoverable', False) else ""
+                print(f"   • Inodo {corrupted['inode_id']}: {corrupted['status']}{recoverable_msg}")
             if len(integrity_results["corrupted_files"]) > 5:
                 print(f"   • ... y {len(integrity_results['corrupted_files']) - 5} más")
