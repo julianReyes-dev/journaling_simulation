@@ -62,17 +62,20 @@ fs.create_file("test.txt", b"Hello, Journaling!")
 ## Resultados Esperados
 
 ### Ejecución Típica del Demo
-```
-SIN JOURNALING:
-   • Tasa de recuperación: 25-45%
-   • Archivos perdidos: 4-8 de 15
-   
-CON JOURNALING:  
-   • Tasa de recuperación: 75-95%
-   • Archivos perdidos: 0-2 de 15
-   
-Mejora con Journaling: +40-60% en recuperación
-```
+**Resultados Típicos:**
+- **Sin Journaling**: 50%-70% de recuperación
+- **Con Journaling**: 70%-90% de recuperación  
+- **Mejora Promedio**: +20-50% con journaling activado
+
+### Capturas de Ejecución
+
+#### Comparación Principal
+<img width="345" height="665" alt="image" src="https://github.com/user-attachments/assets/ecff9b42-39dd-46f2-96c7-e34272648ee9" />
+<img width="334" height="582" alt="image" src="https://github.com/user-attachments/assets/de0b4f5f-32dc-4a8f-b806-da49e52efd1f" />
+<img width="390" height="96" alt="image" src="https://github.com/user-attachments/assets/fb1b6cfd-1450-4e28-bc99-65a7cd92f8ad" />
+
+*Resultado de la comparación lado a lado mostrando la mejora en recuperación*
+
 
 ### Métricas Clave
 - **Tasa de Recuperación**: % de archivos intactos post-fallo
