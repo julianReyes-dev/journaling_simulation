@@ -171,7 +171,7 @@ def run_controlled_crash_demo():
         file_sizes.append(size)
         data = f"Archivo inicial {i} ".encode() * (size // 20)
         fs.create_file(f"init_{i}.txt", data)
-        print(f"   ✅ Archivo init_{i}.txt: {size} bytes")
+        print(f"   Archivo init_{i}.txt: {size} bytes")
     
     # Verificar estado inicial
     print("\nESTADO INICIAL:")
