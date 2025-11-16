@@ -123,5 +123,3 @@ Limitan el tamaño del journal y aceleran la recuperación.
 ## Licencia
 Este proyecto es con fines educativos. Licencia MIT.
 Cada ejecución produce resultados ligeramente diferentes debido a la aleatoriedad en la simulación de fallos. Ejecuta múltiples veces para ver el rango típico de mejoras.
-
-¡El proyecto está listo! Sigue los pasos en orden y tendrás un sistema completo de simulación de journaling file systems.
