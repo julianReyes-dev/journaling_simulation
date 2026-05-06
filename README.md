@@ -1,7 +1,10 @@
 # Journaling File System Simulation
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![Unit Tests](https://img.shields.io/badge/Unit_Tests-Passed-success?style=flat-square)](tests/)
+[![Architecture](https://img.shields.io/badge/Architecture-Journaling_WAL-blue?style=flat-square)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![UPTC](https://img.shields.io/badge/UPTC-Ing.%20Sistemas-red?style=flat-square)](https://www.uptc.edu.co/)
 
 ## Descripción
 Simulación educativa que demuestra cómo los sistemas de archivos con **journaling** (como ext3, ext4) protegen contra la pérdida de datos durante fallos del sistema mediante un mecanismo de registro transaccional.
@@ -67,6 +70,9 @@ fs.create_file("test.txt", b"Hello, Journaling!")
 - **Con Journaling**: 70%-90% de recuperación  
 - **Mejora Promedio**: +20-50% con journaling activado
 
+> [!IMPORTANT]
+> Cada ejecución produce resultados ligeramente diferentes debido a la aleatoriedad en la simulación de fallos. Ejecuta múltiples veces para ver el rango típico de mejoras.
+
 ### Capturas de Ejecución
 
 #### Comparación Principal
@@ -122,4 +128,4 @@ Limitan el tamaño del journal y aceleran la recuperación.
 
 ## Licencia
 Este proyecto es con fines educativos. Licencia MIT.
-Cada ejecución produce resultados ligeramente diferentes debido a la aleatoriedad en la simulación de fallos. Ejecuta múltiples veces para ver el rango típico de mejoras.
+Consulte el archivo [LICENSE](LICENSE) para más detalles.
